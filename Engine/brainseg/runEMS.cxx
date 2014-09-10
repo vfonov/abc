@@ -100,6 +100,8 @@ runEMS(EMSParameters* emsp, bool debugflag, bool writemoreflag)
     outext = ".mha";
   else if (itksys::SystemTools::Strucmp(fmt.c_str(), "Nifti") == 0)
     outext = ".nii";
+  else if (itksys::SystemTools::Strucmp(fmt.c_str(), "MINC") == 0)
+    outext = ".mnc";
   else
   {
     muLogMacro(<< "WARNING: output format unrecognized, using Meta format\n");

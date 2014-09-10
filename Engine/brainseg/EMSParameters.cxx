@@ -15,7 +15,7 @@ EMSParameters
   m_DoAtlasWarp = false;
 
   m_OutputDirectory = "";
-  m_OutputFormat = "Meta";
+  m_OutputFormat = "MINC";
 
   m_Images.Clear();
   m_ImageOrientations.Clear();
@@ -85,6 +85,8 @@ EMSParameters
   if (itksys::SystemTools::Strucmp(m_OutputFormat.c_str(), "Nrrd") == 0)
     validFormat = true;
   if (itksys::SystemTools::Strucmp(m_OutputFormat.c_str(), "Meta") == 0)
+    validFormat = true;
+  if (itksys::SystemTools::Strucmp(m_OutputFormat.c_str(), "MINC") == 0)
     validFormat = true;
 
   if (!validFormat)

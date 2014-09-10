@@ -70,7 +70,7 @@ Fl_Menu_Item GUI::menu_ImageLinearMapTypeChoice[] = {
 };
 
 void GUI::cb_Add_i(Fl_Button*, void*) {
-  char* fn = fl_file_chooser("Add image...", "{*.hdr,*.gipl,*.mha,*.mhd}", NULL, 0);
+  char* fn = fl_file_chooser("Add image...", "{*.mnc,*.hdr,*.gipl,*.mha,*.mhd}", NULL, 0);
 if (fn == NULL)
   return;
 
@@ -134,6 +134,7 @@ Fl_Menu_Item GUI::menu_filterMethodChoice[] = {
 };
 
 Fl_Menu_Item GUI::menu_formatChoice[] = {
+ {"MINC", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"Analyze", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"GIPL", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
  {"Meta", 0,  0, 0, 0, FL_NORMAL_LABEL, 0, 14, 0},
@@ -560,8 +561,10 @@ EMSParameters::Pointer GUI::GetParameters() {
   
   int f = formatChoice->value();
   if (f == 0)
-    p->SetOutputFormat("Analyze");
+    p->SetOutputFormat("MINC");
   else if (f == 1)
+    p->SetOutputFormat("Analyze");
+  else if (f == 2)
     p->SetOutputFormat("GIPL");
   else if (f == 3)
     p->SetOutputFormat("Nrrd");
@@ -602,13 +605,16 @@ void GUI::SetGUIElements(EMSParameters::Pointer p) {
   
   outdirOutput->value(p->GetOutputDirectory().c_str());
   
-  formatChoice->value(2);
-  if (p->GetOutputFormat().compare("Analyze") == 0)
+  formatChoice->value(0);
+  
+  if (p->GetOutputFormat().compare("MINC") == 0)
     formatChoice->value(0);
-  if (p->GetOutputFormat().compare("GIPL") == 0)
+  if (p->GetOutputFormat().compare("Analyze") == 0)
     formatChoice->value(1);
+  if (p->GetOutputFormat().compare("GIPL") == 0)
+    formatChoice->value(2);
   if (p->GetOutputFormat().compare("Nrrd") == 0)
-    formatChoice->value(3);
+    formatChoice->value(4);
   
   imageBrowser->clear();
   imageOrientBrowser->clear();
