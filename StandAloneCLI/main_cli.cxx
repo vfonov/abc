@@ -11,56 +11,149 @@
 #include <exception>
 #include <iostream>
 
+#include <getopt.h>
+#include <unistd.h>
+
+std::string minc_timestamp(int argc,char **argv)
+{
+  std::string timestamp;
+
+  char cur_time[200];
+  time_t t;
+  struct tm *tmp;
+
+  t = time(NULL);
+  tmp = localtime(&t);
+
+  strftime(cur_time, sizeof(cur_time), "%a %b %d %T %Y>>>", tmp);
+  /* Get the time, overwriting newline */
+  timestamp=cur_time;
+
+  /* Copy the program name and arguments */
+  for (int i=0; i<argc; i++) {
+    timestamp+=argv[i];
+    timestamp+=" ";
+  }
+  timestamp+="\n";
+
+  return timestamp;
+}
+
+
 
 void
 printUsage(char* progname)
 {
-  std::cerr << "Usage: " << progname << " <segfile> [options]" << std::endl;
-  std::cerr << "Available options:" << std::endl;
-  std::cerr << "--debug:\tdisplay debug messages" << std::endl;
-  std::cerr << "--write-less:\tdon't write posteriors and filtered, bias corrected images";
-  std::cerr << std::endl;
+  std::cerr << "Usage: " << progname << " <input1> [input2] [input3] <output> [options]" << std::endl
+            << "Available options:" << std::endl
+            << "--debug:\tdisplay debug messages" << std::endl
+            << "--write-less:\tdon't write posteriors and filtered, bias corrected images"
+            << std::endl
+            << "--template <directory with template> - REQUIRED!"<< std::endl 
+            << "--affine\t perform affine registration to the template first"<<std::endl
+            << "--nl\t perform nl registration to the template "<<std::endl
+            << "TODO: add more options!"<<std::endl;
 }
+
+
 
 int
 main(int argc, char** argv)
 {
+  std::string history= minc_timestamp(argc,argv);
+  int clobber=0;
+  int debugflag = 0;
+  int writeflag = 1;
+  int affine = 0;
+  int rigid_body = 0;
+  int nl = 0;
 
-  std::cerr << "Run without any arguments to see command line options" << std::endl;
+  std::string template_dir;
+  
+  static struct option long_options[] = {
+    {"debug", no_argument, &debugflag, 1},
+    {"writeless", no_argument, &writeflag, 0},
+    {"template",  required_argument, 0, 't'},
+    {"affine", no_argument, &affine, 1},
+    {"rigid", no_argument, &rigid_body, 1},
+    {"nl", no_argument, &nl, 1},
+    {0, 0, 0, 0}
+    };
+  int c;
+  for (;;)
+  {
+    /* getopt_long stores the option index here. */
+    int
+    option_index = 0;
 
-  if (argc < 2)
+    c = getopt_long (argc, argv, "t:", long_options, &option_index);
+
+    /* Detect the end of the options. */
+    if (c == -1)
+      break;
+
+    switch (c)
+    {
+    case 0:
+      break;
+    case 't':
+      template_dir = optarg;
+      break;
+    case '?':
+      /* getopt_long already printed an error message. */
+    default:
+      printUsage (argv[0]);
+      return 1;
+    }
+  }
+
+  if((argc - optind)<2 || template_dir.empty() )
   {
     printUsage(argv[0]);
-    return -1;
+    return 1;
   }
 
-  bool validargs = true;
+  std::string output_f=argv[argc-1];
+  argc--;
 
-  bool debugflag = false;
-  bool writeflag = true;
-
-  for (int i = 2; i < argc; i++)
-  {
-    if (strcmp(argv[i], "--debug") == 0)
-      debugflag = true;
-    else if (strcmp(argv[i], "--write-less") == 0)
-      writeflag = false;
-    else
-      validargs = false;
-  }
-
-  if (!validargs)
-  {
-    printUsage(argv[0]);
-    return -1;
-  }
 
   itk::OutputWindow::SetInstance(itk::TextOutput::New());
 
   try
   {
-    std::cout << "Reading " << argv[1] << "..." << std::endl;
-    EMSParameters::Pointer emsp = readEMSParametersXML(argv[1]);
+    EMSParameters::Pointer emsp = EMSParameters::New();
+    emsp->SetAtlasDirectory(template_dir);
+    emsp->SetAtlasOrientation("RAI");
+    
+    emsp->SetOutputFormat("MINC");
+    
+    for(int i=optind;i<argc;i++)
+      emsp->AddImage(argv[i],"RAI");
+
+    emsp->SetFilterIterations(10);
+    emsp->SetFilterTimeStep(0.1);
+    //emsp->SetFilterMethod();
+    emsp->SetMaxBiasDegree(4);
+    emsp->SetDoAtlasWarp(nl);
+    //SetAtlasWarpFluidIterations
+    //SetAtlasWarpFluidMaxStep
+    //SetAtlasWarpKernelWidth
+    if(affine)
+      emsp->SetImageLinearMapType("affine");
+    else if(rigid_body)
+      emsp->SetImageLinearMapType("rigid");
+    else
+      emsp->SetImageLinearMapType("id");
+    
+    for(int i=0;i<4;i++)
+      emsp->AppendPriorWeight(1.0);
+
+    emsp->SetNumberOfThreads(1);
+
+    //emsp->SetSuffix(output_f);
+
+    emsp->SetOutputDirectory(output_f);
+    
     runEMS(emsp, debugflag, writeflag);
   }
   catch (itk::ExceptionObject& e)

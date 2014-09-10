@@ -331,7 +331,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 {
   m_AtlasDirectory = dir;
 
-  m_TemplateFileName = dir + std::string("template.mha");
+  m_TemplateFileName = dir + std::string("template.mnc");
 
   m_TemplateAffineTransform = AffineTransformType::New();
 
@@ -745,7 +745,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
     try
     {
       std::ostringstream oss;
-      oss << m_AtlasDirectory << prIndex << ".mha" << std::ends;
+      oss << m_AtlasDirectory << prIndex << ".mnc" << std::ends;
       reader->SetFileName(oss.str().c_str());
       reader->Update();
     }
