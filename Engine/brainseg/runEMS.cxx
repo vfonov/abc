@@ -237,7 +237,12 @@ runEMS(EMSParameters* emsp, bool debugflag, bool writemoreflag)
     if (writemoreflag)
     {
       muLogMacro(<< "Writing affine-registered template...\n");
+      
+      std::string fn =
+        outdir + mu::get_name((emsp->GetImages()[0]).c_str()) +
+        std::string("_template_affine") + suffstr;
 
+#ifdef SAVE_SHORT
       typedef itk::RescaleIntensityImageFilter<FloatImageType, ByteImageType>
         ByteRescaleType;
 
@@ -249,18 +254,26 @@ runEMS(EMSParameters* emsp, bool debugflag, bool writemoreflag)
 
       typedef itk::ImageFileWriter<ByteImageType> ByteWriterType;
       ByteWriterType::Pointer writer = ByteWriterType::New();
-
-      std::string fn =
-        outdir + mu::get_name((emsp->GetImages()[0]).c_str()) +
-        std::string("_template_affine") + suffstr;
-
+      
       writer->SetInput(rescaler->GetOutput());
+#else
+      typedef itk::ImageFileWriter<FloatImageType> FloatWriterType;
+      FloatWriterType::Pointer writer = FloatWriterType::New();
+
+      writer->SetInput(atlasreg->GetAffineTemplate());
+#endif
+      
       writer->SetFileName(fn.c_str());
       writer->UseCompressionOn();
       writer->Update();
 
       for (unsigned int i = 0; i < images.GetSize(); i++)
       {
+        std::string fn =
+          outdir + mu::get_name((emsp->GetImages()[i]).c_str()) +
+          std::string("_registered") + suffstr;
+          
+#ifdef SAVE_SHORT
         typedef itk::RescaleIntensityImageFilter<FloatImageType, ShortImageType>
           ShortRescaleType;
 
@@ -270,14 +283,18 @@ runEMS(EMSParameters* emsp, bool debugflag, bool writemoreflag)
         rescaler->SetInput(images[i]);
         rescaler->Update();
 
-        std::string fn =
-          outdir + mu::get_name((emsp->GetImages()[i]).c_str()) +
-          std::string("_registered") + suffstr;
 
         typedef itk::ImageFileWriter<ShortImageType> ShortWriterType;
         ShortWriterType::Pointer writer = ShortWriterType::New();
 
         writer->SetInput(rescaler->GetOutput());
+#else
+        typedef itk::ImageFileWriter<FloatImageType> FloatWriterType;
+        FloatWriterType::Pointer writer = FloatWriterType::New();
+
+        writer->SetInput(images[i]);
+#endif
+
         writer->SetFileName(fn.c_str());
         writer->UseCompressionOn();
         writer->Update();
@@ -370,6 +387,7 @@ runEMS(EMSParameters* emsp, bool debugflag, bool writemoreflag)
     DynArray<FloatImagePointer> imgset = segfilter->GetCorrected();
     for (unsigned i = 0; i < imgset.GetSize(); i++)
     {
+#ifdef SAVE_SHORT 
       typedef itk::CastImageFilter<FloatImageType, ShortImageType> CasterType;
       CasterType::Pointer caster = CasterType::New();
 
@@ -386,6 +404,19 @@ runEMS(EMSParameters* emsp, bool debugflag, bool writemoreflag)
       writer->SetFileName(fn.c_str());
       writer->UseCompressionOn();
       writer->Update();
+#else
+      std::string fn =
+        outdir + mu::get_name(names[i].c_str()) + std::string("_corrected")
+        + suffstr;
+
+      typedef itk::ImageFileWriter<FloatImageType> FloatWriterType;
+      FloatWriterType::Pointer writer = FloatWriterType::New();
+      
+      writer->SetInput(imgset[i]);
+      writer->SetFileName(fn.c_str());
+      writer->UseCompressionOn();
+      writer->Update();
+#endif      
     }
 
     // Short posteriors

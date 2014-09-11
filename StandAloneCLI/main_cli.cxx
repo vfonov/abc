@@ -44,7 +44,7 @@ std::string minc_timestamp(int argc,char **argv)
 void
 printUsage(char* progname)
 {
-  std::cerr << "Usage: " << progname << " <input1> [input2] [input3] <output> [options]" << std::endl
+  std::cerr << "Usage: " << progname << " <input1> [input2] [input3] <output dir> <output suffix> [options]" << std::endl
             << "Available options:" << std::endl
             << "--debug:\tdisplay debug messages" << std::endl
             << "--write-less:\tdon't write posteriors and filtered, bias corrected images"
@@ -52,6 +52,8 @@ printUsage(char* progname)
             << "--template <directory with template> - REQUIRED!"<< std::endl 
             << "--affine\t perform affine registration to the template first"<<std::endl
             << "--nl\t perform nl registration to the template "<<std::endl
+            << "--filter-steps <n> use curvature-flow filter for pre-filtering images with this many steps"<<std::endl
+            << "--filter-timestep <f> set time-step for curvature-flow filter"<<std::endl
             << "TODO: add more options!"<<std::endl;
 }
 
@@ -67,16 +69,20 @@ main(int argc, char** argv)
   int affine = 0;
   int rigid_body = 0;
   int nl = 0;
+  int filter_steps=1;
+  double filter_timestep=0.1;
 
   std::string template_dir;
   
   static struct option long_options[] = {
-    {"debug", no_argument, &debugflag, 1},
-    {"writeless", no_argument, &writeflag, 0},
-    {"template",  required_argument, 0, 't'},
-    {"affine", no_argument, &affine, 1},
-    {"rigid", no_argument, &rigid_body, 1},
-    {"nl", no_argument, &nl, 1},
+    {"debug",       no_argument,       &debugflag, 1},
+    {"writeless",   no_argument,       &writeflag, 0},
+    {"template",    required_argument, 0, 't'},
+    {"filter-steps",required_argument, 0, 'f'},
+    {"filter-timestep",  required_argument, 0, 'F'},
+    {"affine",    no_argument,       &affine, 1},
+    {"rigid",     no_argument,       &rigid_body, 1},
+    {"nl",        no_argument,       &nl, 1},
     {0, 0, 0, 0}
     };
   int c;
@@ -99,6 +105,12 @@ main(int argc, char** argv)
     case 't':
       template_dir = optarg;
       break;
+    case 'f':
+      filter_steps=atoi(optarg);
+      break;
+    case 'F':
+      filter_timestep=atof(optarg);
+      break;
     case '?':
       /* getopt_long already printed an error message. */
     default:
@@ -107,14 +119,15 @@ main(int argc, char** argv)
     }
   }
 
-  if((argc - optind)<2 || template_dir.empty() )
+  if((argc - optind)<3 || template_dir.empty() )
   {
     printUsage(argv[0]);
     return 1;
   }
 
-  std::string output_f=argv[argc-1];
-  argc--;
+  std::string output_suffix=argv[argc-1];
+  std::string output_dir=argv[argc-2];
+  argc-=2;
 
 
   itk::OutputWindow::SetInstance(itk::TextOutput::New());
@@ -130,29 +143,40 @@ main(int argc, char** argv)
     for(int i=optind;i<argc;i++)
       emsp->AddImage(argv[i],"RAI");
 
-    emsp->SetFilterIterations(10);
-    emsp->SetFilterTimeStep(0.1);
+    emsp->SetFilterIterations(filter_steps);
+    emsp->SetFilterTimeStep(filter_timestep);
     //emsp->SetFilterMethod();
     emsp->SetMaxBiasDegree(4);
-    emsp->SetDoAtlasWarp(nl);
+    emsp->SetDoAtlasWarp(nl); 
     //SetAtlasWarpFluidIterations
     //SetAtlasWarpFluidMaxStep
     //SetAtlasWarpKernelWidth
     if(affine)
+    {
       emsp->SetImageLinearMapType("affine");
+      emsp->SetAtlasLinearMapType("affine");
+    }
     else if(rigid_body)
+    {
       emsp->SetImageLinearMapType("rigid");
+      emsp->SetAtlasLinearMapType("rigid");
+    }
     else
+    {
       emsp->SetImageLinearMapType("id");
+      emsp->SetAtlasLinearMapType("id");
+    }
     
     for(int i=0;i<4;i++)
       emsp->AppendPriorWeight(1.0);
 
     emsp->SetNumberOfThreads(1);
 
-    //emsp->SetSuffix(output_f);
-
-    emsp->SetOutputDirectory(output_f);
+    emsp->SetSuffix(output_suffix);
+    emsp->SetOutputDirectory(output_dir);
+    
+    if(debugflag)
+      emsp->PrintSelf(std::cerr);
     
     runEMS(emsp, debugflag, writeflag);
   }
