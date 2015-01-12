@@ -7,7 +7,9 @@ endif(COMMAND cmake_policy)
 
 PROJECT(ABC_CLI)
 
-INCLUDE (${CMAKE_ROOT}/Modules/FindITK.cmake)
+#INCLUDE (${CMAKE_ROOT}/Modules/FindITK.cmake)
+find_package(ITK REQUIRED)
+
 IF (USE_ITK_FILE)
   INCLUDE(${USE_ITK_FILE})
 ENDIF (USE_ITK_FILE)
