@@ -59,7 +59,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
   m_AffineTransformReadFlags = FlagArrayType(1);
   m_AffineTransformReadFlags[0] = 0;
 
-  m_UseNonLinearInterpolation = true;
+  m_UseNonLinearInterpolation = false;
 
   m_OutsideFOVCode = vnl_huge_val(1.0f);
 
@@ -581,12 +581,12 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
     if (m_AtlasLinearTransformChoice == AFFINE_TRANSFORM)
       m_TemplateAffineTransform =
         PairRegistrationMethod<InternalImagePixelType>::
-          RegisterAffine(first, templateImg, PairRegType::QuantizeNone);
+          RegisterAffineFast(first, templateImg, PairRegType::QuantizeNone);
 
     if (m_AtlasLinearTransformChoice == RIGID_TRANSFORM)
       m_TemplateAffineTransform =
         PairRegistrationMethod<InternalImagePixelType>::
-          RegisterRigid(first, templateImg, PairRegType::QuantizeNone);
+          RegisterRigidFast(first, templateImg, PairRegType::QuantizeNone);
 
   }
 
@@ -610,12 +610,12 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
     if (m_ImageLinearTransformChoice == AFFINE_TRANSFORM)
       m_AffineTransforms[i] = 
         PairRegistrationMethod<InternalImagePixelType>::
-          RegisterAffine(first, img_i, PairRegType::QuantizeNone);
+          RegisterAffineFast(first, img_i, PairRegType::QuantizeNone);
 
     if (m_ImageLinearTransformChoice == RIGID_TRANSFORM)
       m_AffineTransforms[i] = 
         PairRegistrationMethod<InternalImagePixelType>::
-          RegisterRigid(first, img_i, PairRegType::QuantizeNone);
+          RegisterRigidFast(first, img_i, PairRegType::QuantizeNone);
 
   }
 
@@ -660,7 +660,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
   // Spline interpolation, only available for input images, not atlas
   typename SplineInterpolatorType::Pointer splineInt =
     SplineInterpolatorType::New();
-  splineInt->SetSplineOrder(5);
+  splineInt->SetSplineOrder(3);
 
   // Resample the template
   if (m_TemplateFileName.length() != 0)

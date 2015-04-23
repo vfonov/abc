@@ -18,6 +18,8 @@
 #include "itkResampleImageFilter.h"
 #include "itkRescaleIntensityImageFilter.h"
 
+#include "itkMultiThreader.h"
+
 #include "DynArray.h"
 
 // Use manually instantiated classes for the big program chunks
@@ -39,6 +41,8 @@ int run_ABC(int argc, char** argv)
 {
 
   PARSE_ARGS;
+
+  itk::MultiThreader::SetGlobalDefaultNumberOfThreads( NumberOfThreads );
 
   typedef itk::Image<unsigned char, 3> ByteImageType;
   typedef itk::Image<float, 3> FloatImageType;
