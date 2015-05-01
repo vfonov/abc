@@ -1432,7 +1432,7 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
   // Scale the means
   for (unsigned int k = 0; k < m_NumberOfGaussians[iprior]; k++)
   {
-    float s = 1.0 / pow(1.25, (float)k);
+    float s = 1.0 / powf(1.25, (float)k);
     unsigned int iclass = istart+k;
     for (unsigned int ichan = 0; ichan < numChannels; ichan++)
       m_Means(ichan, iclass) = s * m_Means(ichan, iclass);
@@ -1470,7 +1470,7 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
   // Compute likelihoods
   for (unsigned int iclass = 0; iclass < numClasses; iclass++)
   {
-    double detcov = vnl_determinant(m_Covariances[iclass]);
+    float detcov = vnl_determinant(m_Covariances[iclass]);
 
     if (detcov <= 0.0)
       itkExceptionMacro(<< "Determinant of covariance for class " << iclass
@@ -1478,8 +1478,8 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
         << m_Covariances[iclass]);
 
     // Normalizing constant for the Gaussian
-    double denom =
-      pow(2*vnl_math::pi, m_InputImages.GetSize()/2.0) * sqrt(detcov)
+    float denom =
+      powf(2*vnl_math::pi, m_InputImages.GetSize()/2.0) * sqrt(detcov)
       + vnl_math::eps;
 
     MatrixType invcov = MatrixInverseType(m_Covariances[iclass]);
@@ -1570,7 +1570,7 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
   {
     unsigned int iprior = m_PriorLookupTable[iclass];
 
-    double priorScale =
+    float priorScale =
       m_PriorWeights[iprior] / m_NumberOfGaussians[iprior];
 
     typename MulFilterType::Pointer mulf = MulFilterType::New();
@@ -1767,9 +1767,9 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
   m_TemplateFluidMomenta = 0;
   m_TemplateFluidVelocity = 0;
 
-  //double logLikelihood = vnl_huge_val(1.0f);
-  double logLikelihood = 1e+10;
-  double deltaLogLikelihood = 1.0;
+  float logLikelihood = vnl_huge_val(1.0f);
+  //float logLikelihood = 1e+10;
+  float deltaLogLikelihood = 1.0;
 
   unsigned int biasdegree = 0;
 
@@ -1821,7 +1821,7 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
     muLogMacro(<< "  Updating posteriors\n");
     this->ComputePosteriors();
 
-    double prevLogLikelihood = logLikelihood;
+    float prevLogLikelihood = logLikelihood;
     if (prevLogLikelihood == 0)
       prevLogLikelihood = vnl_math::eps;
 

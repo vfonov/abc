@@ -149,6 +149,9 @@ public:
   void SetImageLinearTransformChoice(LinearTransformChoice c)
   { m_ImageLinearTransformChoice = c; }
 
+  void FastRegistrationOn() { m_FastRegistration = true; }
+  void FastRegistrationOff() { m_FastRegistration = false; }
+
 protected:
 
   AtlasRegistrationMethod();
@@ -209,6 +212,8 @@ private:
 
   LinearTransformChoice m_AtlasLinearTransformChoice;
   LinearTransformChoice m_ImageLinearTransformChoice;
+
+  bool m_FastRegistration;
 
 };
 

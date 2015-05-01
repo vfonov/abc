@@ -124,6 +124,9 @@ int run_ABC(int argc, char** argv)
     if (coregMapType.compare("rigid") == 0)
       atlasreg->SetImageLinearTransformChoice(AtlasRegType::RIGID_TRANSFORM);
 
+    if (RegistrationMode.compare("Fine") == 0)
+      atlasreg->FastRegistrationOff();
+
     // Location of the priors (1.mha, 2.mha, ... 99.mha, ... etc)
     atlasreg->SetAtlasDirectory(atlasDir);
 

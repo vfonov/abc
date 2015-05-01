@@ -141,7 +141,11 @@
       <label>Bias corrected output image 5</label>
       <channel>output</channel>
     </image>
+  </parameters>
 
+<!-- --> 
+  <parameters>
+    <label>Speed</label>
     <integer>
     <name>NumberOfThreads</name>
     <description>Number of threads</description>
@@ -150,7 +154,17 @@
     <default>8</default>
     </integer>
 
+    <string-enumeration>
+      <name>RegistrationMode</name>
+      <description>Registration mode</description>
+      <label>Registration Mode:</label>
+      <longflag>registrationMode</longflag>
+      <element>Coarse</element>
+      <element>Fine</element>
+      <default>Coarse</default>
+    </string-enumeration>
   </parameters>
+
 <!-- --> 
   <parameters advanced="true">
     <label>Advanced Parameters</label>
