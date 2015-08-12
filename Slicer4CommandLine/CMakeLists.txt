@@ -11,6 +11,7 @@ if(NOT Slicer_SOURCE_DIR)
   set(EXTENSION_ACKNOWLEDGEMENTS "This work is part of the National Alliance for Medical Image Computing (NAMIC), funded by the National Institutes of Health through the NIH Roadmap for Medical Research, Grant U54 EB005149.")
   set(EXTENSION_ICONURL "http://www.ucnia.org/software/projects/ABCLogo.png")
   set(EXTENSION_STATUS Beta)
+  set(EXTENSION_SCREENSHOTURLS http://www.slicer.org/slicerWiki/images/0/04/ABC_Slicer3.png)
 endif()
 
 #-----------------------------------------------------------------------------

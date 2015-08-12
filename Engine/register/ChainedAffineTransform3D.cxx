@@ -14,7 +14,8 @@ ChainedAffineTransform3D
 }
 
 ChainedAffineTransform3D
-::ChainedAffineTransform3D(const Self& other)
+::ChainedAffineTransform3D(const Self& other):
+  Superclass()
 {
   this->SetMatrix(other.GetMatrix());
   this->SetOffset(other.GetOffset());
