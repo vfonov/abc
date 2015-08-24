@@ -299,7 +299,7 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
 
 template <class TInputImage, class TProbabilityImage>
 typename EMSegmentationFilter <TInputImage, TProbabilityImage>::
-ByteImagePointer
+ShortImagePointer
 EMSegmentationFilter <TInputImage, TProbabilityImage>
 ::GetOutput()
 {
@@ -1913,7 +1913,7 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
 
   InputImageRegionType region = m_InputImages[0]->GetLargestPossibleRegion();
 
-  m_Labels = ByteImageType::New();
+  m_Labels = ShortImageType::New();
   m_Labels->CopyInformation(m_InputImages[0]);
   m_Labels->SetRegions(region);
   m_Labels->Allocate();
@@ -1977,13 +1977,13 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
         }
 */
 
-        unsigned char label = 0;
+        short label = 0;
         unsigned char fgflag = 0;
 
         // Only use non-zero probabilities and foreground classes
         if (maxv > 0 && imax < numFGClasses)
         {
-          label = (unsigned char)(imax+1);
+          label = (short)(imax+1);
           fgflag = 1;
         }
 
@@ -2113,7 +2113,7 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
   // Zero the foreground posteriors with label 0
   for (unsigned int iclass = 0; iclass < numFGClasses; iclass++)
   {
-    typedef itk::MaskImageFilter<InputImageType, ByteImageType, InputImageType>
+    typedef itk::MaskImageFilter<InputImageType, ShortImageType, InputImageType>
       MaskFilterType;
 
     typename MaskFilterType::Pointer maskf = MaskFilterType::New();
@@ -2256,7 +2256,8 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
   fluid->SetIterations(m_WarpFluidIterations);
   fluid->SetMaxStep(m_WarpFluidMaxStep);
   fluid->SetKernelWidth(m_WarpFluidKernelWidth);
-  fluid->SetRegularityWeight(1e-12);
+  //fluid->SetRegularityWeight(1e-12);
+  fluid->SetRegularityWeight(1.0);
   fluid->SetNumberOfScales(1);
   fluid->Update();
 

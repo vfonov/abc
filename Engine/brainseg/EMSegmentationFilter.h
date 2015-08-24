@@ -120,7 +120,7 @@ public:
   unsigned int* GetNumberOfGaussians() { return m_NumberOfGaussians; }
   void SetNumberOfGaussians(unsigned int* n);
 
-  ByteImagePointer GetOutput();
+  ShortImagePointer GetOutput();
 
   DynArray<ByteImagePointer> GetBytePosteriors();
   DynArray<ShortImagePointer> GetShortPosteriors();
@@ -221,7 +221,7 @@ private:
 
   ByteImagePointer m_Mask;
 
-  ByteImagePointer m_Labels;
+  ShortImagePointer m_Labels;
 
   bool m_InputModified;
 

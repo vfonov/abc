@@ -195,8 +195,8 @@ int run_ABC(int argc, char** argv)
   std::cout << "Writing segmentation images..." << std::endl;
 
   {
-    typedef itk::ImageFileWriter<ByteImageType> ByteWriterType;
-    ByteWriterType::Pointer writer = ByteWriterType::New();
+    typedef itk::ImageFileWriter<ShortImageType> ShortWriterType;
+    ShortWriterType::Pointer writer = ShortWriterType::New();
 
     writer->SetFileName(labelImage.c_str());
     writer->SetInput(segfilter->GetOutput());
