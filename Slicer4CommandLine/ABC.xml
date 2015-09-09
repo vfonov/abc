@@ -22,9 +22,7 @@
     <image>
       <name>inputImage1</name>
       <longflag>inputImage1</longflag>
-      <description>
-      Input image modality 1, outputs are generated in this space
-      </description>
+      <description>Input image modality 1, outputs are generated in this space</description>
       <label>Input image 1</label>
       <channel>input</channel>
     </image>
@@ -70,9 +68,7 @@
     <directory>
     <name>atlasDir</name>
     <label>Atlas Directory</label>
-    <description>
-    Directory that contains an atlas composed of a template image and prior probability images (template.mha, 1.mha, 2.mha, ... , n.mha)
-    </description>
+    <description>Directory that contains an atlas composed of a template image and prior probability images (template.mha, 1.mha, 2.mha, ... , n.mha)</description>
     <flag>a</flag>
     <longflag>atlasDir</longflag>
     <channel>input</channel>
@@ -81,9 +77,7 @@
     <string>
     <name>atlasOrient</name>
     <label>Atlas Orientation</label>
-    <description>
-    Orientation code for images in the atlas (e.g., RAI, LPS, etc).  L = left, R = right, A = anterior, P = posterior, I = inferior, S = superior.
-    </description>
+    <description>Orientation code for images in the atlas (e.g., RAI, LPS, etc).  L = left, R = right, A = anterior, P = posterior, I = inferior, S = superior. </description>
     <flag>u</flag>
     <longflag>atlasOrient</longflag>
     <default>RAI</default>
@@ -92,9 +86,7 @@
     <float-vector>
     <name>priorAdjustVec</name>
     <label>Prior weight adjustments</label>
-    <description>
-    Global scaling factors for adjusting prior weights (list of comma separated numbers with the same count as number of prior images).
-    </description>
+    <description>Global scaling factors for adjusting prior weights (list of comma separated numbers with the same count as number of prior images).</description>
     <longflag>priorAdjust</longflag>
     <default>1,1,1,1</default>
     </float-vector>
@@ -168,9 +160,7 @@
 
     <string-enumeration>
       <name>RegistrationMode</name>
-      <description>
-      Registration mode, for selecting faster or more accurate estimation.
-      </description>
+      <description>Registration mode, for selecting faster or more accurate estimation.</description>
       <label>Registration Mode:</label>
       <longflag>registrationMode</longflag>
       <element>Coarse</element>
@@ -214,18 +204,14 @@
     <name>biasDegree</name>
     <flag>b</flag>
     <longflag>biasDegree</longflag>
-    <description>
-    Maximum polynomial degree for the bias field, typically from 4 to 6
-    </description>
+    <description>Maximum polynomial degree for the bias field, typically range from 4 to 6</description>
     <label>Bias Field Polynomial Degree (0 = off):</label>
     <default>2</default>
     </integer>
 
     <string-enumeration>
       <name>InitialDistributionEstimator</name>
-      <description>
-      Type of initial distribution estimator, can be standard using sample mean and covariance or robust using the fast MCD estimator
-      </description>
+      <description>Type of initial distribution estimator, can be standard using sample mean and covariance or robust using the fast MCD estimator.</description>
       <label>Initial distribution estimator:</label>
       <longflag>initialDistribEstim</longflag>
       <element>robust</element>
@@ -235,9 +221,7 @@
 
     <string-enumeration>
       <name>atlasMapType</name>
-      <description>
-      Type of linear transform for atlas mapping (rigid, affine, identity). Use identity when the first image is already in atlas space.
-      </description>
+      <description>Type of linear transform for atlas mapping (rigid, affine, identity). Use identity when the first image is already in atlas space.</description>
       <label>Atlas Transform Type:</label>
       <longflag>atlasMapType</longflag>
       <element>affine</element>
@@ -248,9 +232,7 @@
 
     <string-enumeration>
       <name>coregMapType</name>
-      <description>
-      Type of transform for mapping between modalities (rigid, affine, identity). Use identity when all images are pre-registered to the space of the first image.
-      </description>
+      <description>Type of transform for mapping between modalities (rigid, affine, identity). Use identity when all images are pre-registered to the space of the first image.</description>
       <label>Coregistration Transform Type:</label>
       <longflag>coregMapType</longflag>
       <element>affine</element>
@@ -262,9 +244,7 @@
     <integer>
     <name>atlasFluidIters</name>
     <label>Atlas Warping Fluid Iterations (0 = off):</label>
-    <description>
-    Number of iterations for computing fluid warps that map atlas to subject
-    </description>
+    <description>Number of iterations for computing fluid warps that map atlas to subject</description>
     <longflag>atlasFluidIters</longflag>
     <default>0</default>
     </integer>
@@ -272,9 +252,7 @@
     <float>
     <name>atlasFluidMaxStep</name>
     <label>Atlas Warping Fluid Maximum Step:</label>
-    <description>
-    Maximum step size for fluid warp estimation via gradient descent
-    </description>
+    <description>Maximum step size for fluid warp estimation via gradient descent</description>
     <longflag>atlasFluidMaxStep</longflag>
     <default>0.5</default>
     </float>
