@@ -21,6 +21,7 @@
 #include "itkMultiThreader.h"
 
 #include "DynArray.h"
+#include "Timer.h"
 
 // Use manually instantiated classes for the big program chunks
 #define MU_MANUAL_INSTANTIATION
@@ -43,6 +44,8 @@ int run_ABC(int argc, char** argv)
   PARSE_ARGS;
 
   itk::MultiThreader::SetGlobalDefaultNumberOfThreads( NumberOfThreads );
+
+  Timer* timer = new Timer();
 
   typedef itk::Image<unsigned char, 3> ByteImageType;
   typedef itk::Image<float, 3> FloatImageType;
@@ -85,7 +88,7 @@ int run_ABC(int argc, char** argv)
   for (unsigned int i = 0; i < inputFiles.GetSize(); i++)
     inputOrients.Append(std::string("file"));
 
-  muLogMacro(<< "Registering images using affine transform...\n");
+  muLogMacro(<< "Registering images using linear transform...\n");
 
   ByteImageType::Pointer fovmask;
 
@@ -255,6 +258,12 @@ int run_ABC(int argc, char** argv)
     writer->Update();
   }
 */
+
+  timer->Stop();
+
+  muLogMacro(<< "All segmentation processes took " << timer->GetElapsedHours() << " hours, ");
+  muLogMacro(<< timer->GetElapsedMinutes() << " minutes, ");
+  muLogMacro(<< timer->GetElapsedSeconds() << " seconds\n");
 
   return 0;
 

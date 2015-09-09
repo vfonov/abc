@@ -17,12 +17,14 @@
 <!-- --> 
   <parameters>
     <label>Input images</label>
-    <description>Input images</description>
+    <description>Multimodal input images for a subject</description>
 
     <image>
       <name>inputImage1</name>
       <longflag>inputImage1</longflag>
-      <description>Input 1</description>
+      <description>
+      Input image modality 1, outputs are generated in this space
+      </description>
       <label>Input image 1</label>
       <channel>input</channel>
     </image>
@@ -30,7 +32,7 @@
     <image>
       <name>inputImage2</name>
       <longflag>inputImage2</longflag>
-      <description>Input 2</description>
+      <description>Input image modality 2</description>
       <label>Input image 2</label>
       <channel>input</channel>
     </image>
@@ -38,7 +40,7 @@
     <image>
       <name>inputImage3</name>
       <longflag>inputImage3</longflag>
-      <description>Input 3</description>
+      <description>Input image modality 3</description>
       <label>Input image 3</label>
       <channel>input</channel>
     </image>
@@ -46,7 +48,7 @@
     <image>
       <name>inputImage4</name>
       <longflag>inputImage4</longflag>
-      <description>Input 4</description>
+      <description>Input image modality 4</description>
       <label>Input image 4</label>
       <channel>input</channel>
     </image>
@@ -54,7 +56,7 @@
     <image>
       <name>inputImage5</name>
       <longflag>inputImage5</longflag>
-      <description>Input 5</description>
+      <description>Input image modality 5</description>
       <label>Input image 5</label>
       <channel>input</channel>
     </image>
@@ -63,11 +65,14 @@
 <!-- --> 
   <parameters>
     <label>Atlas</label>
-    <description>Atlas</description>
+    <description>Atlas data and parameters</description>
 
     <directory>
     <name>atlasDir</name>
     <label>Atlas Directory</label>
+    <description>
+    Directory that contains an atlas composed of a template image and prior probability images (template.mha, 1.mha, 2.mha, ... , n.mha)
+    </description>
     <flag>a</flag>
     <longflag>atlasDir</longflag>
     <channel>input</channel>
@@ -76,6 +81,9 @@
     <string>
     <name>atlasOrient</name>
     <label>Atlas Orientation</label>
+    <description>
+    Orientation code for images in the atlas (e.g., RAI, LPS, etc).  L = left, R = right, A = anterior, P = posterior, I = inferior, S = superior.
+    </description>
     <flag>u</flag>
     <longflag>atlasOrient</longflag>
     <default>RAI</default>
@@ -83,7 +91,10 @@
 
     <float-vector>
     <name>priorAdjustVec</name>
-    <label>Prior weight adjustments (same as number of priors)</label>
+    <label>Prior weight adjustments</label>
+    <description>
+    Global scaling factors for adjusting prior weights (list of comma separated numbers with the same count as number of prior images).
+    </description>
     <longflag>priorAdjust</longflag>
     <default>1,1,1,1</default>
     </float-vector>
@@ -92,7 +103,7 @@
 <!-- --> 
   <parameters>
     <label>Output images</label>
-    <description>Output images</description>
+    <description>Volumes for storing output images</description>
 
     <image type="label">
       <name>labelImage</name>
@@ -105,7 +116,7 @@
     <image>
       <name>outputImage1</name>
       <longflag>outputImage1</longflag>
-      <description>Output 1</description>
+      <description>Bias corrected output image 1</description>
       <label>Bias corrected output image 1</label>
       <channel>output</channel>
     </image>
@@ -113,7 +124,7 @@
     <image>
       <name>outputImage2</name>
       <longflag>outputImage2</longflag>
-      <description>Output 2</description>
+      <description>Bias corrected output image 2</description>
       <label>Bias corrected output image 2</label>
       <channel>output</channel>
     </image>
@@ -121,7 +132,7 @@
     <image>
       <name>outputImage3</name>
       <longflag>outputImage3</longflag>
-      <description>Output 3</description>
+      <description>Bias corrected output image 3</description>
       <label>Bias corrected output image 3</label>
       <channel>output</channel>
     </image>
@@ -129,7 +140,7 @@
     <image>
       <name>outputImage4</name>
       <longflag>--outputImage4</longflag>
-      <description>Output 4</description>
+      <description>Bias corrected output image 4</description>
       <label>Bias corrected output image 4</label>
       <channel>output</channel>
     </image>
@@ -137,7 +148,7 @@
     <image>
       <name>outputImage5</name>
       <longflag>outputImage5</longflag>
-      <description>Output 5</description>
+      <description>Bias corrected output image 5</description>
       <label>Bias corrected output image 5</label>
       <channel>output</channel>
     </image>
@@ -146,9 +157,10 @@
 <!-- --> 
   <parameters>
     <label>Speed</label>
+    <description>Options for parallel execution and efficiency</description>
     <integer>
     <name>NumberOfThreads</name>
-    <description>Number of threads</description>
+    <description>Number of threads used for ITK filter modules</description>
     <label>Number of threads:</label>
     <longflag>numberOfThreads</longflag>
     <default>8</default>
@@ -156,7 +168,9 @@
 
     <string-enumeration>
       <name>RegistrationMode</name>
-      <description>Registration mode</description>
+      <description>
+      Registration mode, for selecting faster or more accurate estimation.
+      </description>
       <label>Registration Mode:</label>
       <longflag>registrationMode</longflag>
       <element>Coarse</element>
@@ -182,8 +196,8 @@
 
     <integer>
     <name>FilterIterations</name>
-    <description>Filter iterations (0 = off)</description>
-    <label>PreFiltering iterations (0 = off):</label>
+    <label>PreFiltering iterations:</label>
+    <description>Number of iterations for initial image filtering (0 = off)</description>
     <longflag>filterIterations</longflag>
     <default>0</default>
     </integer>
@@ -191,7 +205,7 @@
     <float>
     <name>FilterTimeSteps</name>
     <label>PreFiltering time steps:</label>
-    <description>PreFiltering time steps:</description>
+    <description>Time steps for initial image filtering for each modality </description>
     <longflag>filterTimeSteps</longflag>
     <default>0.01</default>
     </float>
@@ -200,13 +214,18 @@
     <name>biasDegree</name>
     <flag>b</flag>
     <longflag>biasDegree</longflag>
+    <description>
+    Maximum polynomial degree for the bias field, typically from 4 to 6
+    </description>
     <label>Bias Field Polynomial Degree (0 = off):</label>
     <default>2</default>
     </integer>
 
     <string-enumeration>
       <name>InitialDistributionEstimator</name>
-      <description>Type of initial distribution estimator</description>
+      <description>
+      Type of initial distribution estimator, can be standard using sample mean and covariance or robust using the fast MCD estimator
+      </description>
       <label>Initial distribution estimator:</label>
       <longflag>initialDistribEstim</longflag>
       <element>robust</element>
@@ -216,7 +235,9 @@
 
     <string-enumeration>
       <name>atlasMapType</name>
-      <description>Type of linear transform for atlas mapping</description>
+      <description>
+      Type of linear transform for atlas mapping (rigid, affine, identity). Use identity when the first image is already in atlas space.
+      </description>
       <label>Atlas Transform Type:</label>
       <longflag>atlasMapType</longflag>
       <element>affine</element>
@@ -227,7 +248,9 @@
 
     <string-enumeration>
       <name>coregMapType</name>
-      <description>Type of transform to produce</description>
+      <description>
+      Type of transform for mapping between modalities (rigid, affine, identity). Use identity when all images are pre-registered to the space of the first image.
+      </description>
       <label>Coregistration Transform Type:</label>
       <longflag>coregMapType</longflag>
       <element>affine</element>
@@ -239,6 +262,9 @@
     <integer>
     <name>atlasFluidIters</name>
     <label>Atlas Warping Fluid Iterations (0 = off):</label>
+    <description>
+    Number of iterations for computing fluid warps that map atlas to subject
+    </description>
     <longflag>atlasFluidIters</longflag>
     <default>0</default>
     </integer>
@@ -246,7 +272,9 @@
     <float>
     <name>atlasFluidMaxStep</name>
     <label>Atlas Warping Fluid Maximum Step:</label>
-    <description>Maximum step size for fluid gradient descent</description>
+    <description>
+    Maximum step size for fluid warp estimation via gradient descent
+    </description>
     <longflag>atlasFluidMaxStep</longflag>
     <default>0.5</default>
     </float>

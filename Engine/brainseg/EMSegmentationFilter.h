@@ -196,6 +196,8 @@ protected:
   // Returns total log likelihood and normalize the posteriors
   double NormalizePosteriors();
 
+  void SmoothenPosteriors();
+
   void ComputeAtlasWarpingFromProbabilities();
   void ComputeAtlasWarpingFromIntensities();
 

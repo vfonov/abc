@@ -166,7 +166,7 @@ runEMS(EMSParameters* emsp, bool debugflag, bool writemoreflag)
   if (atlasdir[atlasdir.size()-1] != MU_DIR_SEPARATOR)
     atlasdir += separator;
 
-  muLogMacro(<< "Registering images using affine transform...\n");
+  muLogMacro(<< "Registering images using linear transform...\n");
 
   ByteImagePointer fovmask;
 
@@ -234,7 +234,7 @@ runEMS(EMSParameters* emsp, bool debugflag, bool writemoreflag)
     // Write the registered template and images
     if (writemoreflag)
     {
-      muLogMacro(<< "Writing affine-registered template...\n");
+      muLogMacro(<< "Writing linearly-registered template...\n");
 
       typedef itk::RescaleIntensityImageFilter<FloatImageType, ByteImageType>
         ByteRescaleType;

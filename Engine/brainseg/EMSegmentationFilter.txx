@@ -15,6 +15,7 @@
 #include "itkWarpImageFilter.h"
 
 #include "itkShrinkImageFilter.h"
+#include "itkBilateralImageFilter.h"
 #include "itkDiscreteGaussianImageFilter.h"
 #include "itkSmoothingRecursiveGaussianImageFilter.h"
 
@@ -442,6 +443,9 @@ template <class TInputImage, class TProbabilityImage>
 EMSegmentationFilter <TInputImage, TProbabilityImage>
 ::DownsampleImage(InputImagePointer img, float factor)
 {
+  if (factor <= 1.0)
+    return img;
+
   InputImageSpacingType spacing = img->GetSpacing();
 
   float minSpacing = spacing[0];
@@ -450,17 +454,15 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
       minSpacing = spacing[i];
 
 /*
-  // TODO: smoothing without changing intensity distributions too much
-
-  //typedef itk::SmoothingRecursiveGaussianImageFilter<
-  typedef itk::DiscreteGaussianImageFilter<
+  typedef itk::SmoothingRecursiveGaussianImageFilter<
+  //typedef itk::DiscreteGaussianImageFilter<
     InputImageType, InputImageType> SmootherType;
 
   typename SmootherType::Pointer smoothf = SmootherType::New();
   smoothf->SetInput(img);
-  //smoothf->SetSigma(0.5 * factor * minSpacing);
-  float sigma = 0.5 * factor * minSpacing;
-  smoothf->SetVariance(sigma*sigma);
+  smoothf->SetSigma(0.5 * minSpacing);
+  //float sigma = 0.5 * minSpacing;
+  //smoothf->SetVariance(sigma*sigma);
   smoothf->Update();
 */
 
@@ -480,7 +482,6 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
   downf->Update();
 
   return downf->GetOutput();
-  //return img;
 }
 
 template <class TInputImage, class TProbabilityImage>
@@ -575,6 +576,15 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
 
   unsigned int numClasses = m_Posteriors.GetSize();
 
+  for (unsigned iclass = 0; iclass < numClasses; iclass++)
+  {
+    m_Posteriors[iclass] =
+      this->RestoreDownsampledImage(m_Posteriors[iclass], 0.0);
+    m_Likelihoods[iclass] =
+      this->RestoreDownsampledImage(m_Likelihoods[iclass], 0.0);
+  }
+
+/*
   m_Posteriors.Clear();
   m_Likelihoods.Clear();
   for (unsigned iclass = 0; iclass < numClasses; iclass++)
@@ -593,6 +603,7 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
     lik->FillBuffer(0);
     m_Likelihoods.Append(lik);
   }
+*/
 
   if (m_LogBiasFields.GetSize() != 0)
   {
@@ -625,7 +636,18 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
 //TODO
   //m_FOVMask = m_OriginalFOVMask;
 
-  this->ComputePosteriors();
+  // Refine distribution estimates at original resolution
+  for (int iter=0; iter < 5; iter++)
+  {
+    this->ComputeDistributions();
+
+    this->ComputePosteriors();
+    this->NormalizePosteriors();
+  }
+
+  this->SmoothenPosteriors();
+
+  this->NormalizePosteriors();
 
 }
 
@@ -1828,6 +1850,8 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
     // Compute log-likelihood and normalize posteriors
     logLikelihood = this->NormalizePosteriors();
 
+    //this->SmoothenPosteriors();
+
     muLogMacro(<< "log(likelihood) = " << logLikelihood << "\n");
 
     deltaLogLikelihood =
@@ -1866,7 +1890,7 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
     // Convergence check
     converged =
       (iter >= m_MaximumIterations)
-// Ignore jumps in the log likelihood
+// Ignore backward jumps in the log likelihood
 //    ||
 //    (deltaLogLikelihood < 0)
       ||
@@ -1876,20 +1900,7 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
 
   } // end EM loop
 
-  muLogMacro(<< "Done computing posteriors with " << iter << " iterations\n");
-
-  // Bias correction at full resolution, still using downsampled images
-  // for computing the bias field coeficients
-  if (m_MaxBiasDegree > 0)
-  {
-    //this->CorrectBias(biasdegree);
-    this->ComputeDistributions();
-  }
-
-  // Recompute posteriors at full resolution
-  this->ComputePosteriors();
-
-  this->NormalizePosteriors();
+  muLogMacro(<< "Done computing Gaussian parameters and posteriors with " << iter << " iterations\n");
 
 }
 
@@ -2200,6 +2211,46 @@ EMSegmentationFilter <TInputImage, TProbabilityImage>
   }
 
   return logL;
+}
+
+template <class TInputImage, class TProbabilityImage>
+void
+EMSegmentationFilter <TInputImage, TProbabilityImage>
+::SmoothenPosteriors()
+{
+  itkDebugMacro(<< "SmoothenPosteriors");
+
+  typedef itk::BilateralImageFilter<ProbabilityImageType, ProbabilityImageType>
+    SmoothFilterType;
+
+  //typedef itk::DiscreteGaussianImageFilter<
+  //  ProbabilityImageType, ProbabilityInputImageType> SmoothFilterType;
+
+  InputImageSpacingType spacing = m_OriginalInputImages[0]->GetSpacing();
+
+  float minSpacing = spacing[0];
+  for (int i = 1; i < m_InputImages[0]->GetImageDimension(); i++)
+    if (spacing[i] < minSpacing)
+      minSpacing = spacing[i];
+
+  unsigned int numPriors = m_Priors.GetSize();
+
+  unsigned int numFGClasses = 0;
+  for (unsigned int i = 0; i < (numPriors-1); i++)
+    numFGClasses += m_NumberOfGaussians[i];
+
+  for (unsigned int iclass = 0; iclass < numFGClasses; iclass++)
+  {
+    typename SmoothFilterType::Pointer smoothf = SmoothFilterType::New();
+    smoothf->SetInput(m_Posteriors[iclass]);
+    smoothf->SetRadius(2);
+    smoothf->SetDomainSigma(minSpacing);
+    smoothf->SetRangeSigma(0.5);
+    smoothf->Update();
+
+    m_Posteriors[iclass] = smoothf->GetOutput();
+  }
+
 }
 
 template <class TInputImage, class TProbabilityImage>
