@@ -10,7 +10,7 @@
   <version>1.6.0</version>
   <contributor>Marcel Prastawa marcel.prastawa@gmail.com</contributor>
   <documentation-url>
-  http://www.nitrc.org/projects/abc
+  http://www.slicer.org/slicerWiki/index.php/Documentation/4.4/Modules/ABC
   </documentation-url>
   <license>Slicer</license>
   <acknowledgements><![CDATA[@EXTENSION_ACKNOWLEDGEMENTS@]]></acknowledgements>
