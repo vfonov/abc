@@ -65,23 +65,14 @@
     <label>Atlas</label>
     <description>Atlas data and parameters</description>
 
-    <directory>
-    <name>atlasDir</name>
-    <label>Atlas Directory</label>
-    <description>Directory that contains an atlas composed of a template image and prior probability images (template.mha, 1.mha, 2.mha, ... , n.mha)</description>
-    <flag>a</flag>
-    <longflag>atlasDir</longflag>
+    <file fileExtensions="mrb" multiple="false">
+    <name>atlasMRB</name>
+    <label>Atlas MRB</label>
+    <description>MRML bundle that contains an atlas composed of a template image and prior probability images (template.mha, 1.mha, 2.mha, ... , n.mha)</description>
+    <flag>m</flag>
+    <longflag>atlasMRB</longflag>
     <channel>input</channel>
-    </directory>
-
-    <string>
-    <name>atlasOrient</name>
-    <label>Atlas Orientation</label>
-    <description>Orientation code for images in the atlas (e.g., RAI, LPS, etc).  L = left, R = right, A = anterior, P = posterior, I = inferior, S = superior. Can also specify "file" to use the image metadata.</description>
-    <flag>u</flag>
-    <longflag>atlasOrient</longflag>
-    <default>RAI</default>
-    </string>
+    </file>
 
     <float-vector>
     <name>priorAdjustVec</name>

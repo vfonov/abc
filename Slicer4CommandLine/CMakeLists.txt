@@ -25,7 +25,13 @@ endif()
 
 #-----------------------------------------------------------------------------  
 set(MODULE_TARGET_LIBRARIES
+  ModuleDescriptionParser
+  vtkSlicerSubjectHierarchyModuleMRML
+  MRMLCore
+  MRMLLogic
+  SlicerBaseLogic
   ${ITK_LIBRARIES}
+  ${VTK_LIBRARIES}
   )
 
 #-----------------------------------------------------------------------------
@@ -38,6 +44,10 @@ set(MODULE_INCLUDE_DIRECTORIES
   ${CMAKE_CURRENT_SOURCE_DIR}/../Engine/register
   ${CMAKE_CURRENT_SOURCE_DIR}/../Engine/robust
   ${CMAKE_CURRENT_SOURCE_DIR}/../Engine/spr
+  ${vtkSlicerSubjectHierarchyModuleMRML_INCLUDE_DIRS}
+  ${MRMLCore_INCLUDE_DIRS}
+  ${MRMLLogic_INCLUDE_DIRS}
+  ${Slicer_Base_INCLUDE_DIRS}
 )
 
 #-----------------------------------------------------------------------------
@@ -47,7 +57,7 @@ set(MODULE_SRCS
   ../Engine/common/Timer.cxx
   ../Engine/common/muFile.cxx
   ../Engine/register/AmoebaOptimizer.cxx
-  ../Engine/register/AtlasRegistrationMethod_float+float.cxx
+  #../Engine/register/AtlasRegistrationMethod_float+float.cxx
   ../Engine/register/ChainedAffineTransform3D.cxx
   ../Engine/register/GradientDescentOptimizer.cxx
   ../Engine/register/PairRegistrationMethod_float.cxx

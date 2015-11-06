@@ -10,6 +10,8 @@
 #include "itkExpImageFilter.h"
 #include "itkLogImageFilter.h"
 
+#include "itkStatisticsImageFilter.h"
+
 #include "LLSBiasCorrector.h"
 
 #include "vnl/vnl_math.h"

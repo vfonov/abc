@@ -1,6 +1,6 @@
 
-#ifndef _AtlasRegistrationMethod_txx
-#define _AtlasRegistrationMethod_txx
+#ifndef _AtlasMRBRegistrationMethod_txx
+#define _AtlasMRBRegistrationMethod_txx
 
 #include "itkAffineTransform.h"
 #include "itkBSplineInterpolateImageFunction.h"
@@ -13,7 +13,7 @@
 #include "itkRescaleIntensityImageFilter.h"
 
 // MI registration module
-#include "AtlasRegistrationMethod.h"
+#include "AtlasMRBRegistrationMethod.h"
 #include "PairRegistrationMethod.h"
 #include "RegistrationParameters.h"
 
@@ -29,12 +29,15 @@
 
 #include "ImageDirectionStandardizer.h"
 
+#include "vtkMRMLScalarVolumeNode.h"
+#include "vtkMRMLStorageNode.h"
+
 #include <fstream>
 #include <sstream>
 
 template <class TOutputPixel, class TProbabilityPixel>
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
-::AtlasRegistrationMethod()
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
+::AtlasMRBRegistrationMethod()
 {
 
   m_Suffix = "";
@@ -43,7 +46,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
   m_TemplateFileName = "";
 
-  m_AtlasDirectory = "";
+  m_AtlasHierarchy = 0;
 
   m_ImageFileNames.Clear();
 
@@ -81,8 +84,8 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 }
 
 template <class TOutputPixel, class TProbabilityPixel>
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
-::~AtlasRegistrationMethod()
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
+::~AtlasMRBRegistrationMethod()
 {
 
   m_ImageFileNames.Clear();
@@ -95,7 +98,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::VerifyInitialization()
 {
 
@@ -111,15 +114,15 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
   // registrations
   if (m_TemplateFileName.length() == 0)
     itkExceptionMacro(<< "Template file name not specified");
-  if (m_AtlasDiretory.length() == 0)
-    itkExceptionMacro(<< "No atlas dir specified");
+  if (m_AtlasHierarchy == 0)
+    itkExceptionMacro(<< "No atlas hierarchy node specified");
   */
 
 }
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::WriteParameters()
 {
 
@@ -176,7 +179,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::ReadParameters()
 {
 
@@ -257,7 +260,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::SetSuffix(std::string suffix)
 {
 
@@ -269,7 +272,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::SetTemplateFileName(std::string filename)
 {
 
@@ -289,7 +292,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::SetImageFileNames(StringList names)
 {
 
@@ -327,12 +330,38 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
-::SetAtlasDirectory(const std::string& dir)
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
+::SetAtlasHierarchy(vtkMRMLSubjectHierarchyNode* h)
 {
-  m_AtlasDirectory = dir;
+  if (h == 0)
+    itkExceptionMacro(<< "No hierarchy node specified");
 
-  m_TemplateFileName = dir + std::string("template.mha");
+  m_AtlasHierarchy = h;
+
+  vtkNew<vtkCollection> childNodes;
+  m_AtlasHierarchy->GetAssociatedChildrenNodes(childNodes.GetPointer());
+
+  vtkMRMLScalarVolumeNode* templateVol = 0;
+
+  for (int i = 0; i < childNodes->GetNumberOfItems(); i++)
+  {
+    vtkMRMLScalarVolumeNode* vn = dynamic_cast<vtkMRMLScalarVolumeNode*>(
+      childNodes->GetItemAsObject(i) );
+
+    if (vn == 0)
+      continue;
+
+    if (strcmp(vn->GetName(), "template") == 0)
+    {
+      templateVol = vn;
+      break;
+    }
+  }
+
+  if (templateVol == 0)
+    itkExceptionMacro(<< "No template volume detected");
+
+  m_TemplateFileName = templateVol->GetStorageNode()->GetFileName();
 
   m_TemplateAffineTransform = AffineTransformType::New();
 
@@ -346,7 +375,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::SetAtlasOrientation(std::string orient)
 {
 
@@ -361,7 +390,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::SetImageOrientations(StringList orientations)
 {
 
@@ -375,9 +404,9 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 
 template <class TOutputPixel, class TProbabilityPixel>
-typename AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+typename AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::ProbabilityImageList
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::GetProbabilities()
 {
 
@@ -390,9 +419,9 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 }
 
 template <class TOutputPixel, class TProbabilityPixel>
-typename AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+typename AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::OutputImageList
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::GetImages()
 {
 
@@ -405,9 +434,9 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 }
 
 template <class TOutputPixel, class TProbabilityPixel>
-typename AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+typename AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::OutputImagePointer
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::GetAffineTemplate()
 {
   itkDebugMacro(<< "GetAffineTemplate");
@@ -419,7 +448,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::Update()
 {
   itkDebugMacro(<< "Update");
@@ -442,11 +471,11 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 }
 
 template <class TOutputPixel, class TProbabilityPixel>
-typename AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+typename AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::InternalImagePointer
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::PrefilterImage(
-  typename AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+  typename AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
   ::InternalImagePointer& img)
 {
   if (m_PrefilteringIterations == 0)
@@ -488,7 +517,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::ReadImages()
 {
 
@@ -534,7 +563,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::RegisterImages()
 {
 
@@ -654,7 +683,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 
 template <class TOutputPixel, class TProbabilityPixel>
 void
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::ResampleImages()
 {
 
@@ -761,21 +790,42 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
   }
 
   // Resample the probabilities
+  vtkNew<vtkCollection> childNodes;
+  m_AtlasHierarchy->GetAssociatedChildrenNodes(childNodes.GetPointer());
+
   for (unsigned int i = 0; i < m_Probabilities.GetSize(); i++)
     m_Probabilities[i] = 0;
   m_Probabilities.Clear();
-  unsigned int prIndex = 0;
-  while (true)
+
+  std::vector<vtkMRMLScalarVolumeNode*> priorVols;
+  for (int i = 0; i < childNodes->GetNumberOfItems()-1; i++)
   {
-    ++prIndex;
+    char s[256];
+    snprintf(s, 256, "%d", i+1);
+
+    vtkMRMLScalarVolumeNode* p_i = 0;
+
+    for (int j = 0; j < childNodes->GetNumberOfItems(); j++)
+    {
+      vtkMRMLScalarVolumeNode* vn = dynamic_cast<vtkMRMLScalarVolumeNode*>(
+        childNodes->GetItemAsObject(j) );
+
+      if (vn == 0)
+        continue;
+
+      if (strcmp(vn->GetName(), s) == 0)
+      {
+        p_i = vn;
+        break;
+      }
+    }
 
     ReaderPointer reader = ReaderType::New();
 
     try
     {
-      std::ostringstream oss;
-      oss << m_AtlasDirectory << prIndex << ".mha" << std::ends;
-      reader->SetFileName(oss.str().c_str());
+      muLogMacro(<< "Attempting to load " << p_i->GetStorageNode()->GetFileName() << "...\n");
+      reader->SetFileName( p_i->GetStorageNode()->GetFileName() );
       reader->Update();
     }
     catch (...)
@@ -783,7 +833,7 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
       break;
     }
 
-    muLogMacro(<< "Resampling atlas prior " << prIndex << "...\n");
+    muLogMacro(<< "Resampling atlas prior " << i+1 << "...\n");
 
     InternalImagePointer prob_i = reader->GetOutput();
 
@@ -807,7 +857,6 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
     resampler->Update();
 
     m_Probabilities.Append(CopyProbabilityImage(resampler->GetOutput()));
-
   }
 
   if (m_Probabilities.GetSize() > 0)
@@ -906,11 +955,11 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 }
 
 template <class TOutputPixel, class TProbabilityPixel>
-typename AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+typename AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::OutputImagePointer
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::CopyOutputImage(
-  typename AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+  typename AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
   ::InternalImagePointer img)
 {
 
@@ -942,11 +991,11 @@ AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
 }
 
 template <class TOutputPixel, class TProbabilityPixel>
-typename AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+typename AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::ProbabilityImagePointer
-AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
 ::CopyProbabilityImage(
-  typename AtlasRegistrationMethod<TOutputPixel, TProbabilityPixel>
+  typename AtlasMRBRegistrationMethod<TOutputPixel, TProbabilityPixel>
   ::InternalImagePointer img)
 {
 

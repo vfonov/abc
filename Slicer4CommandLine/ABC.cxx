@@ -1,7 +1,7 @@
 
 
 // Atlas based segmentation
-// ABC outdir --inputImage img1 ... --inputImage imgn atlasdir --atlasOrient RAI -b 4 --atlasFluidIters 5
+// ABC outdir --inputImage img1 ... --inputImage imgn --atlasMRB atlas.mrb -b 4 --atlasFluidIters 5 --outputLabel seg
 
 #include "ABCCLP.h"
 
@@ -20,16 +20,37 @@
 
 #include "itkMultiThreader.h"
 
+#include "ModuleDescriptionParser.h"
+#include "ModuleDescription.h"
+#include "ModuleParameterGroup.h"
+#include "ModuleParameter.h"
+
+#include "vtkMRMLApplicationLogic.h"
+#include "vtkMRMLNode.h"
+#include "vtkMRMLScene.h"
+#include "vtkSlicerApplicationLogic.h"
+
+#include "vtkMRMLScalarVolumeNode.h"
+#include "vtkMRMLSceneViewNode.h"
+#include "vtkMRMLSceneViewStorageNode.h"
+
+#include "vtkMRMLSubjectHierarchyNode.h"
+
+#include <vtkNew.h>
+#include <vtksys/SystemTools.hxx>
+
 #include "DynArray.h"
 #include "Timer.h"
 
 // Use manually instantiated classes for the big program chunks
 #define MU_MANUAL_INSTANTIATION
-#include "AtlasRegistrationMethod.h"
 #include "EMSegmentationFilter.h"
 #include "PairRegistrationMethod.h"
 #undef MU_MANUAL_INSTANTIATION
 
+#include "AtlasMRBRegistrationMethod.h"
+
+#include <cstdlib>
 #include <exception>
 #include <iostream>
 
@@ -43,6 +64,133 @@ int run_ABC(int argc, char** argv)
 
   PARSE_ARGS;
 
+  if (labelImage.size() == 0 && outputImage1.size() == 0)
+  {
+    std::cerr << "No output label or bias-corrected image specified" << std::endl;
+    return -1;
+  }
+
+  std::cout << "Locating temporary directory..." << std::endl;
+
+  char* envTempDir = getenv("SLICER_TEMPORARY_DIR");
+
+  if (envTempDir == 0)
+    envTempDir = getenv("TEMP");
+  if (envTempDir == 0)
+    envTempDir = getenv("TMP");
+  if (envTempDir == 0)
+    envTempDir = getenv("TMPDIR");
+  if (envTempDir == 0)
+    envTempDir = "/tmp/Slicer";
+
+  std::string tempDir = std::string(envTempDir);
+  tempDir += std::string("/ABC-CLI-MRB");
+
+  std::cout << "Using temporary directory: " << tempDir << std::endl;
+
+  vtkNew<vtkSlicerApplicationLogic> appLogic;
+
+  vtkNew<vtkMRMLScene> scene;
+
+  vtkNew<vtkMRMLHierarchyNode> hNode;
+  scene->RegisterNodeClass(hNode.GetPointer(), "vtkMRMLHierarchyNode");
+  vtkNew<vtkMRMLSubjectHierarchyNode> shNode;
+  scene->RegisterNodeClass(shNode.GetPointer(), "vtkMRMLSubjectHierarchyNode");
+
+  vtkNew<vtkMRMLSceneViewNode> svNode;
+  scene->RegisterNodeClass(svNode.GetPointer(), "vtkMRMLSceneViewNode");
+  vtkNew<vtkMRMLSceneViewStorageNode> svsNode;
+  scene->RegisterNodeClass(svsNode.GetPointer(), "vtkMRMLSceneViewStorageNode");
+
+  appLogic->SetMRMLScene(scene.GetPointer());
+
+  vtksys::SystemTools::MakeDirectory(tempDir);
+
+  std::cout << "Loading MRB: " << atlasMRB << std::endl;
+
+  bool atlasLoaded = appLogic->OpenSlicerDataBundle(
+    atlasMRB.c_str(), tempDir.c_str() );
+
+  scene->InitTraversal();
+
+  vtkMRMLSubjectHierarchyNode* rootNode =
+    dynamic_cast<vtkMRMLSubjectHierarchyNode*>(
+      scene->GetNextNodeByClass("vtkMRMLSubjectHierarchyNode") );
+
+  if (rootNode == 0)
+  {
+    std::cerr << "No subject hierarchy detected in MRB" << std::endl;
+    vtksys::SystemTools::RemoveADirectory(tempDir);
+    return -1;
+  }
+
+/*
+  vtkNew<vtkCollection> childNodes;
+  rootNode->GetAssociatedChildrenNodes(childNodes.GetPointer());
+
+  vtkMRMLScalarVolumeNode* templateVol = 0;
+
+  for (int i = 0; i < childNodes->GetNumberOfItems(); i++)
+  {
+    vtkMRMLScalarVolumeNode* vn = dynamic_cast<vtkMRMLScalarVolumeNode*>(
+      childNodes->GetItemAsObject(i) );
+
+    if (vn == 0)
+      continue;
+
+    if (strcmp(vn->GetName(), "template") == 0)
+    {
+      templateVol = vn;
+      break;
+    }
+  }
+
+  if (templateVol == 0)
+  {
+    std::cerr << "No template volume node detected" << std::endl;
+    vtksys::SystemTools::RemoveADirectory(tempDir);
+    return -1;
+  }
+
+  std::vector<vtkMRMLScalarVolumeNode*> priorVols;
+  for (int i = 0; i < childNodes->GetNumberOfItems()-1; i++)
+  {
+    char s[256];
+    snprintf(s, 256, "%d", i+1);
+
+    vtkMRMLScalarVolumeNode* p_i = 0;
+
+    for (int j = 0; j < childNodes->GetNumberOfItems(); j++)
+    {
+      vtkMRMLScalarVolumeNode* vn = dynamic_cast<vtkMRMLScalarVolumeNode*>(
+        childNodes->GetItemAsObject(j) );
+
+      if (vn == 0)
+        continue;
+
+      if (strcmp(vn->GetName(), s) == 0)
+      {
+        p_i = vn;
+        break;
+      }
+    }
+
+    priorVols.push_back(p_i);
+  }
+
+  if (priorVols.size() == 0)
+  {
+    std::cerr << "No prior volume nodes detected" << std::endl;
+    return -1;
+  }
+
+std::cout << "template stor " << templateVol->GetStorageNode() << std::endl;
+
+  std::cout << "template " << templateVol->GetName() << " ID = " << templateVol->GetID() << " file = " << templateVol->GetStorageNode()->GetFileName() << std::endl;
+  for (int i = 0; i < priorVols.size(); i++)
+    std::cout << "prior " << i << " " << priorVols[i]->GetName() << " ID = " << priorVols[i]->GetID() << " file = " << priorVols[i]->GetStorageNode()->GetFileName() << std::endl;
+*/
+
   itk::MultiThreader::SetGlobalDefaultNumberOfThreads( NumberOfThreads );
 
   Timer* timer = new Timer();
@@ -52,10 +200,6 @@ int run_ABC(int argc, char** argv)
   typedef itk::Image<short, 3> ShortImageType;
 
   typedef itk::ImageFileReader<FloatImageType> ReaderType;
-
-  // Make sure last character in atlas directory string is a separator
-  if (atlasDir[atlasDir.size()-1] != MU_DIR_SEPARATOR)
-    atlasDir += "/";
 
   // Set up suffix string for images
   std::string suffstr = "_seg.mha";
@@ -96,8 +240,10 @@ int run_ABC(int argc, char** argv)
 
   DynArray<FloatImageType::Pointer> images;
   DynArray<FloatImageType::Pointer> priors;
+
+  try
   {
-    typedef AtlasRegistrationMethod<float, float> AtlasRegType;
+    typedef AtlasMRBRegistrationMethod<float, float> AtlasRegType;
     AtlasRegType::Pointer atlasreg = AtlasRegType::New();
 
     atlasreg->SetPrefilteringMethod(FilterMethod.c_str());
@@ -106,11 +252,6 @@ int run_ABC(int argc, char** argv)
 
     //TODO: allow parameter to set output names?
     atlasreg->SetSuffix("");
-
-    std::string templatefn = atlasDir + std::string("template.mha");
-    atlasreg->SetTemplateFileName(templatefn);
-
-    atlasreg->SetAtlasOrientation(atlasOrient);
 
     atlasreg->SetImageFileNames(inputFiles);
     atlasreg->SetImageOrientations(inputOrients);
@@ -130,8 +271,7 @@ int run_ABC(int argc, char** argv)
     if (RegistrationMode.compare("Fine") == 0)
       atlasreg->FastRegistrationOff();
 
-    // Location of the priors (1.mha, 2.mha, ... 99.mha, ... etc)
-    atlasreg->SetAtlasDirectory(atlasDir);
+    atlasreg->SetAtlasHierarchy(rootNode);
 
     // NOTE: always start from scratch in Slicer
     //muLogMacro(<< "Attempting to read previous registration results..."
@@ -141,7 +281,7 @@ int run_ABC(int argc, char** argv)
     muLogMacro(<< "Registering and resampling images..." << std::endl);
     atlasreg->Update();
 
-    // NOTE: Disable write, unless you have outdir?
+    // NOTE: Disable write, unless you have output transform node?
     //atlasreg->WriteParameters();
 
     fovmask = atlasreg->GetFOVMask();
@@ -151,6 +291,15 @@ int run_ABC(int argc, char** argv)
 
     templateImage = atlasreg->GetAffineTemplate();
   } // end atlas reg block
+  catch (...)
+  {
+    std::cerr << "Error while registering atlas" << std::endl;
+    vtksys::SystemTools::RemoveADirectory(tempDir);
+    return -1;
+  }
+
+  // Remove unpacked atlas MRB when done
+  vtksys::SystemTools::RemoveADirectory(tempDir);
 
   // Rescale intensity of input images
   for (unsigned int k = 0; k < images.GetSize(); k++)
