@@ -102,7 +102,7 @@ void
 MersenneTwisterRNG
 ::InitializeByTime()
 {
-  unsigned long keys[2] = {(unsigned long)time(NULL), clock()};
+  unsigned long keys[2] = {(unsigned long)time(NULL), static_cast<unsigned long>(clock())};
 
   this->InitializeByArray(keys, 2);
 }
